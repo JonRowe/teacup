@@ -209,15 +209,46 @@ module Teacup
       return {} if seen[self]
       return {} unless stylename
 
-      unless get_stylesheet_cache(stylename, target, orientation)
+      retval = get_stylesheet_cache(stylename, target, orientation)
+      unless retval
         run_block
         seen[self] = true
 
         set_stylesheet_cache(stylename, target, orientation, styles[stylename].build(target, orientation, seen))
+        retval = get_stylesheet_cache(stylename, target, orientation)
       end
 
       # mutable hashes could mess with our cache, so return a duplicate
-      get_stylesheet_cache(stylename, target, orientation).dup
+      return retval.dup
+    end
+
+    # You can define a style by an array of stylenames.  This method will return
+    # all the "merged styles" that match the list of stylenames
+    def query_merged(all_stylenames, target=nil, orientation=nil)
+      return [] if all_stylenames.length == 0
+      run_block
+
+      retval = []
+      self.styles.each do |stylename, style|
+        if stylename.is_a? Array
+          matches = stylename.all? { |name| all_stylenames.include? name }
+          if matches
+            sort = all_stylenames.length
+            sort *= stylename.reduce(0) { |memo, name|
+              memo + all_stylenames.index(name)
+            }
+          end
+        else
+          sort = all_stylenames.index(stylename)
+          matches = !!sort
+        end
+
+        if matches
+          retval << [sort, query(stylename, target, orientation)]
+        end
+      end
+
+      return retval.sort { |left, right| left[0] <=> right[0] }.map { |entry| entry[1] }
     end
 
     # Add a set of properties for a given stylename or multiple stylenames.
@@ -243,6 +274,11 @@ module Teacup
       end
 
       queries.each do |stylename|
+        # make merged styles consistent
+        if stylename.is_a?(Array)
+          stylename.sort!
+        end
+
         # reset the stylesheet_cache for this stylename
         @stylesheet_cache.delete(stylename) if @stylesheet_cache
 

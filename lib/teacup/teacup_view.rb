@@ -122,11 +122,11 @@ module Teacup
 
     def restyle!(orientation=nil)
       if Teacup.should_restyle?
-        if stylesheet && stylesheet.is_a?(Teacup::Stylesheet)
-          style_classes.each do |stylename|
-            style(stylesheet.query(stylename, self, orientation))
+        if self.stylesheet && self.stylesheet.is_a?(Teacup::Stylesheet)
+          styles = self.stylesheet.query_merged(([self.stylename] + self.style_classes).compact)
+          styles.each do |style_hash|
+            style(style_hash)
           end
-          style(stylesheet.query(self.stylename, self, orientation))
         end
         teacup_subviews.each { |subview| subview.restyle!(orientation) }
       end
