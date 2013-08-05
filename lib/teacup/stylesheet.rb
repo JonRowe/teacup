@@ -125,18 +125,16 @@ module Teacup
     # @stylesheet_cache object is manipulated directly (to invalidate entries,
     # or the entire cache)
     def stylesheet_cache
-      @stylesheet_cache ||= Hash.new do |cache,_stylename|
-        cache[_stylename] = Hash.new do |_target,_orientation|
-          _target[_orientation] = {}
-        end
-      end
+      @stylesheet_cache ||= {}
     end
 
     def get_stylesheet_cache(stylename, target, orientation)
-      stylesheet_cache[stylename][target][orientation]
+      ((self.stylesheet_cache[stylename] || {})[target] || {})[orientation]
     end
 
     def set_stylesheet_cache(stylename, target, orientation, value)
+      self.stylesheet_cache[stylename] ||= {}
+      self.stylesheet_cache[stylename][target] ||= {}
       self.stylesheet_cache[stylename][target][orientation] = value
     end
 
