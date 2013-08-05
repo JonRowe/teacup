@@ -134,16 +134,22 @@ module Teacup
 
       teacup_style = Style.new
 
+      style_name = nil
+      style_classes = []
       teacup_settings.each do |setting|
         case setting
         when Symbol, String
-          view.stylename = setting
+          if style_name
+            style_classes << setting
+          else
+            style_name = setting
+          end
         when Hash
           # override settings, but apply them to teacup_style so that it remains
           # a Teacup::Style object
           Teacup::merge_defaults(setting, teacup_style, teacup_style)
-        when Enumerable
-          view.style_classes = setting
+        when Array
+          style_classes.concat(setting)
         when nil
           # skip. this is so that helper methods that accept arguments like
           # stylename can pass those on to this method without having to
@@ -153,6 +159,13 @@ module Teacup
         else
           raise "The argument #{setting.inspect} is not supported in Teacup::Layout::layout()"
         end
+      end
+
+      if style_name
+        view.stylename = style_name
+      end
+      if style_classes.length > 0
+        view.style_classes = style_classes
       end
 
       if view.is_a? Teacup::View
